@@ -1,6 +1,6 @@
 # ShifumiAI
 
-Just some project I made between 10pm and 12pm as I had this dumb idea during the day.
+Just some project I made between 10pm and 12pm as I had this dumb idea during the day. (some parts are still in french also 😓)
 
 ## Summary:
 
