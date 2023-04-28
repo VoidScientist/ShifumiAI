@@ -1,18 +1,33 @@
 import random as rd
-
+from matplotlib import pyplot
 from AI import AI
 
+# Constants
 PLAYABLE = ["p", "f", "c"]
 WIN_CASES = [["p", "f"], ["f", "c"], ["c", "p"]]
 POP_SIZE = 100
 ELITISM = 10
-MAX_GEN = 10000
+MAX_GEN = 100
 MUTATION_RATE = 0.15
 TOURNAMENT_SIZE = 5
-TEST_ROUNDS = 10
+TEST_ROUNDS = 20
 STRATEGIES_NUMBER = 4
 CHOICES_NUMBER = 3
 
+# Variables relative to "determine_enemy()"
+enemies = [AI([[rd.random()] * STRATEGIES_NUMBER, [rd.random()] * CHOICES_NUMBER]),
+           AI([[0, 0, 0, 1], [rd.random()] * CHOICES_NUMBER]),
+           AI([[0, 0, 0, 1], [0, 0, 1]]),
+           AI([[0, 0, 0, 1], [0, 1, 0]]),
+           AI([[0, 0, 0, 1], [1, 0, 0]]),
+           AI([[1, 0, 0, 0], [0] * CHOICES_NUMBER]),
+           AI([[0, 1, 0, 0], [0] * CHOICES_NUMBER]),
+           AI([[0, 0, 1, 0], [0] * CHOICES_NUMBER])]
+weights = [3, 3, 1, 1, 1, 1, 1, 1]
+cum_weights = [sum(weights[:i+1]) for i in range(len(weights))]
+
+# Variables related to matplotlib
+best_fitness_per_gen = []
 
 def create_genes():
     return [[rd.random() for i in range(STRATEGIES_NUMBER)],
@@ -26,15 +41,17 @@ ranked_population = []
 def determine_winner(player, ai):
     if [ai, player] in WIN_CASES:
         return 1
-    if ai == player:
-        return 0.5
     return 0
+
+
+def determine_enemy():
+    return rd.choices(enemies, cum_weights=cum_weights, k=1)[0]
 
 
 def evaluate(ind):
     fitness = 0
+    player = determine_enemy()
     for i in range(TEST_ROUNDS):
-        player = AI([[rd.random()] * STRATEGIES_NUMBER, [rd.random()] * CHOICES_NUMBER])
         player_action = player.act()
         fitness += determine_winner(ind.act(), player_action)
         ind.last_player_action = player_action
@@ -54,6 +71,8 @@ def tournament(pop):
 for gen in range(MAX_GEN):
     ranked_population = sorted(population, key=evaluate, reverse=True)
 
+    best_fitness_per_gen.append(evaluate(ranked_population[0]))
+
     parent1, parent2 = tournament(rd.sample(ranked_population, TOURNAMENT_SIZE))
 
     population = []
@@ -72,3 +91,12 @@ for gen in range(MAX_GEN):
 
 print(f"Win percentage : {(evaluate(ranked_population[0]) / TEST_ROUNDS) * 100}%")
 print(ranked_population[0].genes)
+
+# Matplotlib and fitness
+pyplot.title("Evolution of AI fitness")
+pyplot.xlabel("Generations")
+pyplot.ylabel("Wins")
+pyplot.plot([i+1 for i in range(MAX_GEN)],best_fitness_per_gen)
+fitness_median_per_gen = [sum(best_fitness_per_gen[:i+1])/(i+1) for i in range(len(best_fitness_per_gen))]
+pyplot.plot([i+1 for i in range(MAX_GEN)],fitness_median_per_gen, "-")
+pyplot.show()
